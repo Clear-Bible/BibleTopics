@@ -1,0 +1,23 @@
+site_name: alignments-ind
+repo_url: https://github.com/Clear-Bible/alignments-ind
+site_description: Alignment project data for Indonesian
+site_author: Sean Boisen
+
+nav:
+  - Home: index.md
+  - Project Brief: ProjectBrief.md
+plugins:
+  - search
+copyright: Maintained by Sean Boisen.
+theme:
+  name: material
+  feature:
+    tabs: true
+  palette:
+    primary: white
+    accent: blue
+markdown_extensions:
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
