@@ -13,6 +13,7 @@ dist/
 # Backup files
 *~
 *#
+.ipynb_checkpoints
 
 # Undo-tree save-files
 *.~undo-tree
