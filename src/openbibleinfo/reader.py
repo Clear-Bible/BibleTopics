@@ -31,6 +31,11 @@ class Reader:
             usecols=self.votescolumns,
             dtype=self.votesdtypes,
         )
+        # add PassageLength and UsableRange
+        self.df["PassageLength"] = self.df.apply(lambda row: self.passagelen(row.StartVerseId, row.EndVerseId), axis=1)
+        self.df["UsableRange"] = self.df.apply(self.usablerange, axis=1)
+        # drop records with cross-chapter/book ranges
+        self.topicsdf = self.df[self.df.UsableRange < 99]
 
     def display_topic_data(self, topic: str) -> None:
         """Display verses and votes for a topic."""
@@ -80,3 +85,16 @@ class Reader:
             return False
         else:
             return True
+
+    def top_topics(self, threshold: int = 55) -> pd.DataFrame:
+        """Return topics whose MeanPassageVotes exceed threshold."""
+
+        topicsdf = pd.DataFrame(self.topicsdf.Topic.value_counts()).reset_index()
+        topicsdf.columns = ["Topic", "TopicPassageCount"]
+        passagecountdf = self.topicsdf.pivot_table(index="Topic", aggfunc="count", values="StartVerseId").reset_index()
+        passagecountdf.columns = ["Topic", "TopicPassageCount"]
+        topicvotessum = self.topicsdf.pivot_table(index="Topic", aggfunc="sum", values=["Votes"]).reset_index()
+        topicvotessum.columns = ["Topic2", "TopicVotesSum"]
+        topicsdf = pd.concat([passagecountdf, topicvotessum], axis="columns").drop("Topic2", axis="columns")
+        topicsdf["MeanPassageVotes"] = topicsdf.TopicVotesSum / topicsdf.TopicPassageCount
+        return topicsdf[topicsdf.MeanPassageVotes > threshold].sort_values("MeanPassageVotes", ascending=False)
