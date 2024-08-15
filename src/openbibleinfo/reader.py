@@ -34,8 +34,10 @@ class Reader:
         # add PassageLength and UsableRange
         self.df["PassageLength"] = self.df.apply(lambda row: self.passagelen(row.StartVerseId, row.EndVerseId), axis=1)
         self.df["UsableRange"] = self.df.apply(self.usablerange, axis=1)
+        self.df["UsableReference"] = (self.df.PassageLength == 1) | self.df.UsableRange
         # drop records with cross-chapter/book ranges
-        self.topicsdf = self.df[self.df.UsableRange < 99]
+        self.topicsdf = self.df[self.df.UsableReference]
+        self.toptopics = self.top_topics()
 
     def display_topic_data(self, topic: str) -> None:
         """Display verses and votes for a topic."""
@@ -85,6 +87,27 @@ class Reader:
             return False
         else:
             return True
+
+    def passage_probability(self, row) -> float:
+        """Return the percentage of this row's votes for the whole topic.
+
+        Only computable given self.toptopics.
+        """
+        if not row.UsableReference:
+            return 0.0
+        elif not self.toptopics.Topic.str.contains(row.Topic).any():
+            return 0.0
+        else:
+            rowtopic = self.toptopics[self.toptopics.Topic == row.Topic]
+            if rowtopic.empty:
+                return 0.0
+            else:
+                votesum = int(rowtopic.TopicVotesSum.iloc[0])
+                if not votesum:
+                    return 0.0
+                else:
+                    votes = int(row.Votes)
+                    return votes / votesum
 
     def top_topics(self, threshold: int = 55) -> pd.DataFrame:
         """Return topics whose MeanPassageVotes exceed threshold."""
